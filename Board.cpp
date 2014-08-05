@@ -7,11 +7,16 @@ using namespace std;
 class Board { //Class to hold the board currently being solved
     private:
     bool OldSolvedNumbers[81];
+    bool OldSolvedNumbers_B[81];
     int Candidates[81][9];
+    int Candidates_B[81][9];
     int OldCandidates[81][9];
+    int OldCandidates_B[81][9];
     bool SolvedNumbers[81];
+    bool SolvedNumbers_B[81];
     bool GroupIsGood(int*);
     int OldBoardNumbers[81];
+    int OldBoardNumbers_B[81];
     void CopyCandidates();    
     void FillCandidates();
     void CopyBoardNumbers();
@@ -24,9 +29,10 @@ class Board { //Class to hold the board currently being solved
     bool FindHiddenSingles();
     bool InCandidates(int, int);
     bool isInArray(int* array,int arraylen,int num);
-    int CandidateLen(int (*) [9]  ,int );
+    int CandidateLen(int * );
     int BruteForceRandom(int );
-    
+    bool BrFoRa=false;
+    int BoardNumbers_B[81];
     public:
     Board(char*);
     bool solved=false;
@@ -37,6 +43,7 @@ class Board { //Class to hold the board currently being solved
     bool CheckMissPlacements(int);
     bool LogicSolveBoard();
     bool BruteForceRandomParrent();
+    void PrintBoardBrute();
     
     
 };
@@ -71,9 +78,16 @@ bool Board::IsSameCandidates(int Candidates1[81][9],int Candidates2[81][9]) {
     return true;
     }
 bool Board::IsSolved() {
+    if (!BrFoRa) {
+        for (int i=0;i<81;i++) {
+            if (SolvedNumbers[i]) continue;
+                return false;
+            }
+        return true;
+        }
     for (int i=0;i<81;i++) {
-        if (SolvedNumbers[i]) continue;
-            return false;
+        if (SolvedNumbers_B[i]) continue;
+             return false;
         }
     return true;
     }
@@ -89,7 +103,12 @@ bool Board::LogicSolveBoard() {
             hidden=FindHiddenSingles();
             if (!(hidden or naked)) break;
             else {
-                if (!IsSameBoard(BoardNumbers,OldBoardNumbers)) FillCandidates();
+                if(!BrFoRa) {
+                    if (!IsSameBoard(BoardNumbers,OldBoardNumbers)) FillCandidates();
+                    }
+                else {
+                    if (!IsSameBoard(BoardNumbers_B,OldBoardNumbers_B)) FillCandidates();
+                    }
                 //FindNakedPairsTripplesQuads();
                 //FindHiddenPairsTripplesQuads();
                 }
@@ -99,7 +118,12 @@ bool Board::LogicSolveBoard() {
             //NakedGroups=NakedGroups=FindNakedPairsTripplesQuads();
             //HiddenGroups=FindHiddenPairsTripplesQuads();
             //PointingPairs=FindPointingPairs();
-            if (IsSameCandidates(Candidates,OldCandidates)) break;
+            if (!BrFoRa) {
+                if (IsSameCandidates(Candidates,OldCandidates)) break;
+                }
+            else {
+                if (IsSameCandidates(Candidates_B,OldCandidates_B)) break;
+                }
             }
         naked=FindNakedSingles();
         hidden=FindHiddenSingles();
@@ -111,22 +135,44 @@ bool Board::LogicSolveBoard() {
 }
 
 bool Board::FindNakedSingles() {
+    if (!BrFoRa) {
+    
+        bool Changed=false;
+        for (int i=0;i<81;i++) {
+            if (SolvedNumbers[i]==false) {
+                if (Candidates[i][1]==0) {
+                    Changed=true;
+                    BoardNumbers[i]=Candidates[i][0];
+                    SolvedNumbers[i]=true;
+                    }
+                }
+            }
+        return Changed;
+        }
     bool Changed=false;
     for (int i=0;i<81;i++) {
-        if (SolvedNumbers[i]==false) {
-            if (Candidates[i][1]==0) {
+        if (SolvedNumbers_B[i]==false) {
+            if (Candidates_B[i][1]==0) {
                 Changed=true;
-                BoardNumbers[i]=Candidates[i][0];
-                SolvedNumbers[i]=true;
+                BoardNumbers_B[i]=Candidates_B[i][0];
+                SolvedNumbers_B[i]=true;
                 }
             }
         }
     return Changed;
+    
     }
 bool Board::InCandidates(int Cell,int num) {
+    if (!BrFoRa) {
+        for (int i=0;i<9;i++) {
+            if (Candidates[Cell][i]==num) return true;
+            if (Candidates[Cell][i]==0) return false;
+            }
+        return false;
+        }
     for (int i=0;i<9;i++) {
-        if (Candidates[Cell][i]==num) return true;
-        if (Candidates[Cell][i]==0) return false;
+        if (Candidates_B[Cell][i]==num) return true;
+        if (Candidates_B[Cell][i]==0) return false;
         }
     return false;
     }
@@ -136,6 +182,79 @@ bool Board::FindHiddenSingles() {
     bool Changed=false;
     int cell=-1;
     int cellcount=0;
+    //Blocks:
+    if (!BrFoRa) {
+        for (int x=0;x<3;x++) {
+            for (int y=0;y<3;y++) {
+                for(int num=1;num<10;num++) {
+                    cell=-1;
+                    cellcount=0;
+                    for(int i=0;i<3;i++) {
+                        for (int j=0;j<3;j++) {
+                            if (InCandidates((3*x+i)*9+(3*y+j),num)) {
+                                cell=(3*x+i)*9+(3*y+j);
+                                cellcount++;
+                                }
+                            }
+                        }
+                    if (cellcount==1 and BoardNumbers[cell]==0) {
+                        BoardNumbers[cell]=num;
+                        SolvedNumbers[cell]=true;
+                        Candidates[cell][0]=num;
+                        if (Candidates[cell][1]!=0) {
+                            for (int j=1;j<9;j++) Candidates[cell][j]=0;
+                            }
+                        Changed=true;
+                        }
+                    }
+                }
+            }
+        //Rows
+        for (int x=0;x<9;x++) {
+            for(int num=1;num<10;num++) {
+                cell=-1;
+                cellcount=0;
+                for (int y=0;y<9;y++) {
+                    if (InCandidates(x*9+y,num)) {
+                        cell=x*9+y;
+                        cellcount++;
+                        }
+                    }
+                if (cellcount==1 and BoardNumbers[cell]==0) {
+                    BoardNumbers[cell]=num;
+                    SolvedNumbers[cell]=true;
+                    Candidates[cell][0]=num;
+                    if (Candidates[cell][1]!=0) {
+                        for (int j=1;j<9;j++) Candidates[cell][j]=0;
+                        }
+                    Changed=true;
+                    }
+                }
+            }
+        //Collumns
+        for (int y=0;y<9;y++) {
+            for(int num=1;num<10;num++) {
+                cell=-1;
+                cellcount=0;
+                for (int x=0;x<9;x++) {
+                    if (InCandidates(x*9+y,num)) {
+                        cell=x*9+y;
+                        cellcount++;
+                        }
+                    }
+                if (cellcount==1 and BoardNumbers[cell]==0) {
+                    BoardNumbers[cell]=num;
+                    SolvedNumbers[cell]=true;
+                    Candidates[cell][0]=num;
+                    if (Candidates[cell][1]!=0) {
+                        for (int j=1;j<9;j++) Candidates[cell][j]=0;
+                        }
+                    Changed=true;
+                    }
+                }
+            }
+        return Changed;
+        }
     //Blocks:
     for (int x=0;x<3;x++) {
         for (int y=0;y<3;y++) {
@@ -150,12 +269,12 @@ bool Board::FindHiddenSingles() {
                             }
                         }
                     }
-                if (cellcount==1 and BoardNumbers[cell]==0) {
-                    BoardNumbers[cell]=num;
-                    SolvedNumbers[cell]=true;
-                    Candidates[cell][0]=num;
-                    if (Candidates[cell][1]!=0) {
-                        for (int j=1;j<9;j++) Candidates[cell][j]=0;
+                if (cellcount==1 and BoardNumbers_B[cell]==0) {
+                    BoardNumbers_B[cell]=num;
+                    SolvedNumbers_B[cell]=true;
+                    Candidates_B[cell][0]=num;
+                    if (Candidates_B[cell][1]!=0) {
+                        for (int j=1;j<9;j++) Candidates_B[cell][j]=0;
                         }
                     Changed=true;
                     }
@@ -173,12 +292,12 @@ bool Board::FindHiddenSingles() {
                     cellcount++;
                     }
                 }
-            if (cellcount==1 and BoardNumbers[cell]==0) {
-                BoardNumbers[cell]=num;
-                SolvedNumbers[cell]=true;
-                Candidates[cell][0]=num;
-                if (Candidates[cell][1]!=0) {
-                    for (int j=1;j<9;j++) Candidates[cell][j]=0;
+            if (cellcount==1 and BoardNumbers_B[cell]==0) {
+                BoardNumbers_B[cell]=num;
+                SolvedNumbers_B[cell]=true;
+                Candidates_B[cell][0]=num;
+                if (Candidates_B[cell][1]!=0) {
+                    for (int j=1;j<9;j++) Candidates_B[cell][j]=0;
                     }
                 Changed=true;
                 }
@@ -195,12 +314,12 @@ bool Board::FindHiddenSingles() {
                     cellcount++;
                     }
                 }
-            if (cellcount==1 and BoardNumbers[cell]==0) {
-                BoardNumbers[cell]=num;
-                SolvedNumbers[cell]=true;
-                Candidates[cell][0]=num;
-                if (Candidates[cell][1]!=0) {
-                    for (int j=1;j<9;j++) Candidates[cell][j]=0;
+            if (cellcount==1 and BoardNumbers_B[cell]==0) {
+                BoardNumbers_B[cell]=num;
+                SolvedNumbers_B[cell]=true;
+                Candidates_B[cell][0]=num;
+                if (Candidates_B[cell][1]!=0) {
+                    for (int j=1;j<9;j++) Candidates_B[cell][j]=0;
                     }
                 Changed=true;
                 }
@@ -212,15 +331,31 @@ bool Board::FindHiddenSingles() {
            
                 
 void Board::CopyCandidates() {
-    for(int i=0;i<81;i++) {
-        for(int j=0;j<9;j++) {
-            OldCandidates[i][j]=Candidates[i][j];
+    if (!BrFoRa) {
+        for(int i=0;i<81;i++) {
+            for(int j=0;j<9;j++) {
+                OldCandidates[i][j]=Candidates[i][j];
+                }
+            }
+        }
+    else {
+        for(int i=0;i<81;i++) {
+            for(int j=0;j<9;j++) {
+                OldCandidates_B[i][j]=Candidates_B[i][j];
+                }
             }
         }
     }
 void Board::CopyBoardNumbers() {
-    for (int i=0;i<81;i++) {
-        OldBoardNumbers[i]=BoardNumbers[i];
+    if (!BrFoRa) {
+        for (int i=0;i<81;i++) {
+            OldBoardNumbers[i]=BoardNumbers[i];
+            }
+        }
+    else {
+        for (int i=0;i<81;i++) {
+            OldBoardNumbers_B[i]=BoardNumbers_B[i];
+            }
         }
     }
 bool Board::isInArray(int* array,int arraylen,int num) {
@@ -229,13 +364,15 @@ bool Board::isInArray(int* array,int arraylen,int num) {
         }
     return false;
     }
-int Board::CandidateLen(int TempCandidates[81][9],int Cell) {
+int Board::CandidateLen(int *Candidatelist) {
     for (int i=0;i<9;i++) {
-        if (TempCandidates[Cell][i]==0) return i;
+        if (Candidatelist[i]==0) return i;
         }
-    return 9;
+    return 8;
     }
 bool Board::BruteForceRandomParrent() {
+    if (IsSolved()) return true;
+    BrFoRa=true;
     int nextNumberOfTries=30;
     int tries=-nextNumberOfTries;
     while(true) {
@@ -244,21 +381,21 @@ bool Board::BruteForceRandomParrent() {
         nextNumberOfTries+=10;
         }
     cout << tries << endl;
-    return IsSolved() ;
+    bool State= IsSolved() ;
+    BrFoRa=false;
+    if (State==true) {
+        for (int i=0;i<81;i++) {
+            BoardNumbers[i]=BoardNumbers_B[i];
+            SolvedNumbers[i]=SolvedNumbers_B[i];
+            for (int j=0;j<9;j++) Candidates[i][j]=Candidates_B[i][j];
+            }
+        LogicSolveBoard();
+        }
+    return State;
     }
 int Board::BruteForceRandom(int tryborder) {
+    //Find Random Cells
     int testing=0;
-    int TempCandidates[81][9];
-    int TempBoard[81];
-    int TempSolvedNumbers[81];
-    for (int i=0;i<81;i++) {
-        TempBoard[i]=BoardNumbers[i];
-        TempSolvedNumbers[i]=SolvedNumbers[i];
-        for (int j=0;j<9;j++) {
-            TempCandidates[i][j]=Candidates[i][j];
-            }
-        }
-    
     int cells[]={-1,-1,-1,-1};
     for (int i=0;i<4;i++) {
         while(true) {
@@ -269,82 +406,42 @@ int Board::BruteForceRandom(int tryborder) {
                 }
             }
         }
-    for (int i=0;i<=CandidateLen(TempCandidates,cells[0]);i++) {
-        if (i==0) BoardNumbers[cells[0]]=0;
-        else BoardNumbers[cells[0]]=TempCandidates[cells[0]][i-1];
-        if(i!=0) SolvedNumbers[cells[0]]=true;
-        else SolvedNumbers[cells[0]]=false;
-        if (!CheckMissPlacements(cells[0])) continue;
-        for (int j=0;j<=CandidateLen(TempCandidates,cells[1]);j++) {
-            if (j==0) BoardNumbers[cells[1]]=0;
-            else BoardNumbers[cells[1]]=TempCandidates[cells[1]][j-1];
-            if(j!=0) SolvedNumbers[cells[1]]=true;
-            else SolvedNumbers[cells[1]]=false;
-            if (!CheckMissPlacements(cells[1])) continue;
-            for (int k=0;k<=CandidateLen(TempCandidates,cells[2]);k++) {
-                if (k==0) BoardNumbers[cells[2]]=0;
-                else BoardNumbers[cells[2]]=TempCandidates[cells[2]][k-1];
-                if(k!=0) SolvedNumbers[cells[2]]=true;
-                else SolvedNumbers[cells[2]]=false;
-                if (!CheckMissPlacements(cells[2])) continue;
-                for (int l=0;l<=CandidateLen(TempCandidates,cells[3]);l++) {
-                    if (l==0) BoardNumbers[cells[3]]=0;
-                    else BoardNumbers[cells[3]]=TempCandidates[cells[3]][l-1];
-                    if(l!=0) SolvedNumbers[cells[3]]=true;
-                    else SolvedNumbers[cells[3]]=false;
-                    testing++;
-                    if (!CheckMissPlacements(cells[3])) continue;
+    int Candidates0Len=CandidateLen(Candidates[cells[0]]);
+    int Candidates1Len=CandidateLen(Candidates[cells[1]]);
+    int Candidates2Len=CandidateLen(Candidates[cells[2]]);
+    int Candidates3Len=CandidateLen(Candidates[cells[3]]);
+    for (int a=Candidates0Len;a>=0;a--) {
+        BoardNumbers_B[cells[0]]=Candidates[cells[0]][a];
+        if (a!=Candidates0Len) SolvedNumbers_B[cells[0]]=true;
+        else SolvedNumbers_B[cells[0]]=false;
+        for (int b=Candidates1Len;b>=0;b--) {
+            BoardNumbers_B[cells[1]]=Candidates[cells[1]][b];
+            if (b!=Candidates1Len) SolvedNumbers_B[cells[1]]=true;
+            else SolvedNumbers_B[cells[1]]=false;
+            for (int c=Candidates2Len;c>=0;c--) {
+                BoardNumbers_B[cells[2]]=Candidates[cells[2]][c];
+                if (c!=Candidates2Len) SolvedNumbers_B[cells[2]]=true;
+                else SolvedNumbers_B[cells[2]]=false;
+                for (int d=Candidates3Len;d>=0;d--) {
+                    BoardNumbers_B[cells[3]]=Candidates[cells[3]][d];
+                    if (d!=Candidates3Len) SolvedNumbers_B[cells[3]]=true;
+                    else SolvedNumbers_B[cells[3]]=false;
                     for (int ii=0;ii<81;ii++) {
                         if (isInArray(cells,4,ii)) continue;
-                        BoardNumbers[ii]=TempBoard[ii];
-                        SolvedNumbers[ii]=TempSolvedNumbers[ii];
-                        for (int jj=0;jj<9;jj++) {
-                            Candidates[ii][jj]=TempCandidates[ii][jj];
-                            }
+                        BoardNumbers_B[ii]=BoardNumbers[ii];
+                        SolvedNumbers_B[ii]=SolvedNumbers[ii];
                         }
-                    if (testing>tryborder) {
-                        for (int a=0;a<4;a++) {
-                            BoardNumbers[cells[a]]=0;
-                            SolvedNumbers[cells[a]]=false;
-                            for (int b=0;b<9;b++) {
-                                Candidates[cells[a]][b]=TempCandidates[cells[a]][b];
-                                }
-                            }
-                        return -3;
-                        }
+                    if (testing>tryborder) return -3;
                     if (CheckMissPlacements()) {
-                       // cout << "a"<< endl;
-                        //PrintBoard();
-                        //FillCandidates();
-                        if (LogicSolveBoard() ){
-                        for(int g=0;g<4;g++) {
-                            cout << cells[g] << endl;
-                            }
-                         return 1;
-                         }
-                       // cout << "b" << endl;
-                        //PrintBoard();
+                        if (LogicSolveBoard() and CheckMissPlacements()) return 1;
                         }
-                    else {
-                        PrintBoard();
-                        }
-                    
                     }
                 }
             }
         }
-    for (int ii=0;ii<81;ii++) {
-        BoardNumbers[ii]=TempBoard[ii];
-        SolvedNumbers[ii]=TempSolvedNumbers[ii];
-        for (int jj=0;jj<9;jj++) {
-            Candidates[ii][jj]=TempCandidates[ii][jj];
-            }
-        }
-    return -1;                
-                
-        
-    
-    }    
+                    
+    return -1;
+    }
             
 int Board::BruteForce() {
     int CurrentCell=-1;
@@ -397,24 +494,50 @@ int Board::BruteForce() {
 }
 
 void Board::FillCandidates() {
-    for (int i=0;i<81;i++) {
-        if (BoardNumbers[i]!=0){ //This can be optimized, just skip if cell is solved.
-            Candidates[i][0]=BoardNumbers[i];
-            if (Candidates[i][1]!=0) {
-                for (int j=1;j<9;j++) Candidates[i][j]=0;
+    if (!BrFoRa) {
+        for (int i=0;i<81;i++) {
+            if (BoardNumbers[i]!=0){ //This can be optimized, just skip if cell is solved.
+                Candidates[i][0]=BoardNumbers[i];
+                if (Candidates[i][1]!=0) {
+                    for (int j=1;j<9;j++) Candidates[i][j]=0;
+                }
+            }
+            else {
+                for (int j=0;j<9;j++) Candidates[i][j]=0;
+                for (int j=1;j<10;j++) {
+                    BoardNumbers[i]=j;
+                    if(CheckMissPlacements(i)) Candidates[i][j-1]=j;
+                    }
+                std::sort(Candidates[i],Candidates[i]+9,std::greater<int>());
+                if (Candidates[i][1]==0) {
+                    BoardNumbers[i]=Candidates[i][0];
+                    SolvedNumbers[i]=true;
+                    }
+                else BoardNumbers[i]=0;
+                }
             }
         }
-        else {
-            for (int j=1;j<10;j++) {
-                BoardNumbers[i]=j;
-                if(CheckMissPlacements(i)) Candidates[i][j-1]=j;
+    else {
+        for (int i=0;i<81;i++) {
+            if (BoardNumbers_B[i]!=0){ //This can be optimized, just skip if cell is solved.
+                Candidates_B[i][0]=BoardNumbers_B[i];
+                if (Candidates_B[i][1]!=0) {
+                    for (int j=1;j<9;j++) Candidates_B[i][j]=0;
                 }
-            std::sort(Candidates[i],Candidates[i]+9,std::greater<int>());
-            if (Candidates[i][1]==0) {
-                BoardNumbers[i]=Candidates[i][0];
-                SolvedNumbers[i]=true;
+            }
+            else {
+                for (int j=0;j<9;j++) Candidates_B[i][j]=0;
+                for (int j=1;j<10;j++) {
+                    BoardNumbers_B[i]=j;
+                    if(CheckMissPlacements(i)) Candidates_B[i][j-1]=j;
+                    }
+                std::sort(Candidates_B[i],Candidates_B[i]+9,std::greater<int>());
+                if (Candidates_B[i][1]==0) {
+                    BoardNumbers_B[i]=Candidates_B[i][0];
+                    SolvedNumbers_B[i]=true;
+                    }
+                else BoardNumbers_B[i]=0;
                 }
-            else BoardNumbers[i]=0;
             }
         }
     }
@@ -431,53 +554,107 @@ bool Board::GroupIsGood(int* Group) {
             
 bool Board::CheckMissPlacements() {
     //Blocks
-    for (int x=0;x<3;x++) {
-        for (int y=0;y<3;y++) {
-            int BlockNumbers[9]={0,0,0,0,0,0,0,0,0};
-            for (int i=0;i<3;i++) {
-                for (int j=0;j<3;j++) BlockNumbers[j+3*i]=BoardNumbers[(3*x+i)*9+(3*y+j)];
-                }
-            if(!GroupIsGood(BlockNumbers)) return false;
+    if(!BrFoRa) {
+    
+        for (int x=0;x<3;x++) {
+            for (int y=0;y<3;y++) {
+                int BlockNumbers[9]={0,0,0,0,0,0,0,0,0};
+                for (int i=0;i<3;i++) {
+                    for (int j=0;j<3;j++) BlockNumbers[j+3*i]=BoardNumbers[(3*x+i)*9+(3*y+j)];
+                    }
+                if(!GroupIsGood(BlockNumbers)) return false;
+            }
         }
+        //Rows
+        for (int x=0;x<9;x++) {
+            int RowNumbers[9]={0,0,0,0,0,0,0,0,0};
+            for (int y=0;y<9;y++) RowNumbers[y]=BoardNumbers[x*9+y];
+            if (!GroupIsGood(RowNumbers)) return false;
+            }
+        //Collumns
+        for (int y=0;y<9;y++) {
+            int CollumnNumbers[9]={0,0,0,0,0,0,0,0,0};
+            for (int x=0;x<9;x++) CollumnNumbers[x]=BoardNumbers[x*9+y];
+            if (!GroupIsGood(CollumnNumbers)) return false;
+            }
+        return true;
     }
-    //Rows
-    for (int x=0;x<9;x++) {
-        int RowNumbers[9]={0,0,0,0,0,0,0,0,0};
-        for (int y=0;y<9;y++) RowNumbers[y]=BoardNumbers[x*9+y];
-        if (!GroupIsGood(RowNumbers)) return false;
+    else {
+        
+        for (int x=0;x<3;x++) {
+            for (int y=0;y<3;y++) {
+                int BlockNumbers[9]={0,0,0,0,0,0,0,0,0};
+                for (int i=0;i<3;i++) {
+                    for (int j=0;j<3;j++) BlockNumbers[j+3*i]=BoardNumbers_B[(3*x+i)*9+(3*y+j)];
+                    }
+                if(!GroupIsGood(BlockNumbers)) return false;
+            }
         }
-    //Collumns
-    for (int y=0;y<9;y++) {
-        int CollumnNumbers[9]={0,0,0,0,0,0,0,0,0};
-        for (int x=0;x<9;x++) CollumnNumbers[x]=BoardNumbers[x*9+y];
-        if (!GroupIsGood(CollumnNumbers)) return false;
-        }
-    return true;
+        //Rows
+        for (int x=0;x<9;x++) {
+            int RowNumbers[9]={0,0,0,0,0,0,0,0,0};
+            for (int y=0;y<9;y++) RowNumbers[y]=BoardNumbers_B[x*9+y];
+            if (!GroupIsGood(RowNumbers)) return false;
+            }
+        //Collumns
+        for (int y=0;y<9;y++) {
+            int CollumnNumbers[9]={0,0,0,0,0,0,0,0,0};
+            for (int x=0;x<9;x++) CollumnNumbers[x]=BoardNumbers_B[x*9+y];
+            if (!GroupIsGood(CollumnNumbers)) return false;
+            }
+        return true;
+    }
                 
 }
 bool Board::CheckMissPlacements(int CellNum) {
-    //Blocks
-    int x=(CellNum%9)/3;
-    int y=CellNum/27;
-    int BlockNumbers[9]={0,0,0,0,0,0,0,0,0};
-    for (int i=0;i<3;i++) {
-        for (int j=0;j<3;j++) {
-            BlockNumbers[j+3*i]=BoardNumbers[(3*x+i)*9+(3*y+j)];
+    if(!BrFoRa) {
+        //Blocks
+        int x=(CellNum%9)/3;
+        int y=CellNum/27;
+        int BlockNumbers[9]={0,0,0,0,0,0,0,0,0};
+        for (int i=0;i<3;i++) {
+            for (int j=0;j<3;j++) {
+                BlockNumbers[j+3*i]=BoardNumbers[(3*x+i)*9+(3*y+j)];
+                }
             }
-        }
-    if(!GroupIsGood(BlockNumbers)) return false;
-    //Rows
-    x=CellNum/9;
-    int RowNumbers[9]={0,0,0,0,0,0,0,0,0};
-    for (int y=0;y<9;y++) RowNumbers[y]=BoardNumbers[x*9+y];
-    if (!GroupIsGood(RowNumbers)) return false;
-    
-    //Collumns
-    y=CellNum%9;
-    int CollumnNumbers[9]={0,0,0,0,0,0,0,0,0};
-    for (int x=0;x<9;x++) CollumnNumbers[x]=BoardNumbers[x*9+y];
-    if (!GroupIsGood(CollumnNumbers)) return false;
-    return true;
+        if(!GroupIsGood(BlockNumbers)) return false;
+        //Rows
+        x=CellNum/9;
+        int RowNumbers[9]={0,0,0,0,0,0,0,0,0};
+        for (int y=0;y<9;y++) RowNumbers[y]=BoardNumbers[x*9+y];
+        if (!GroupIsGood(RowNumbers)) return false;
+        
+        //Collumns
+        y=CellNum%9;
+        int CollumnNumbers[9]={0,0,0,0,0,0,0,0,0};
+        for (int x=0;x<9;x++) CollumnNumbers[x]=BoardNumbers[x*9+y];
+        if (!GroupIsGood(CollumnNumbers)) return false;
+        return true;
+    }
+    else {
+        //Blocks
+        int x=(CellNum%9)/3;
+        int y=CellNum/27;
+        int BlockNumbers[9]={0,0,0,0,0,0,0,0,0};
+        for (int i=0;i<3;i++) {
+            for (int j=0;j<3;j++) {
+                BlockNumbers[j+3*i]=BoardNumbers_B[(3*x+i)*9+(3*y+j)];
+                }
+            }
+        if(!GroupIsGood(BlockNumbers)) return false;
+        //Rows
+        x=CellNum/9;
+        int RowNumbers[9]={0,0,0,0,0,0,0,0,0};
+        for (int y=0;y<9;y++) RowNumbers[y]=BoardNumbers_B[x*9+y];
+        if (!GroupIsGood(RowNumbers)) return false;
+        
+        //Collumns
+        y=CellNum%9;
+        int CollumnNumbers[9]={0,0,0,0,0,0,0,0,0};
+        for (int x=0;x<9;x++) CollumnNumbers[x]=BoardNumbers_B[x*9+y];
+        if (!GroupIsGood(CollumnNumbers)) return false;
+        return true;
+    }
 }
 
 void Board::PrintBoard() {
@@ -492,6 +669,26 @@ void Board::PrintBoard() {
             {
                 if (counter%3==2) cout << BoardNumbers[j] << " ";
                 else cout << BoardNumbers[j] << " ";
+            }
+            else cout << ". ";
+            counter++;
+        }
+        cout << endl;
+    }
+    cout << "\n\n";
+}
+void Board::PrintBoardBrute() {
+    int counter=0;
+    for(int i=0;i<9;i++) {
+        if (i%3==0 && i!=0) cout << "---------------------" << endl;
+        counter=0;
+        for(int j=i*9;j<(i+1)*9;j++) 
+        {
+            if (counter%3==0 && counter!=0) cout << "| ";
+            if (BoardNumbers_B[j]!=0) 
+            {
+                if (counter%3==2) cout << BoardNumbers_B[j] << " ";
+                else cout << BoardNumbers_B[j] << " ";
             }
             else cout << ". ";
             counter++;
