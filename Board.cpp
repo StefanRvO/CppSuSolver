@@ -1,8 +1,12 @@
 #include<algorithm>
 #include<iostream>
+#include<random>
+#include<stdlib.h>
+#include<time.h>
 using namespace std;
 class Board { //Class to hold the board currently being solved
     private:
+    bool OldSolvedNumbers[81];
     int Candidates[81][9];
     int OldCandidates[81][9];
     bool SolvedNumbers[81];
@@ -11,6 +15,7 @@ class Board { //Class to hold the board currently being solved
     void CopyCandidates();    
     void FillCandidates();
     void CopyBoardNumbers();
+    void CopySolvedNumbers();
     bool IsSameBoard(int*, int*);
     bool IsSameCandidates(int (*) [9],int (*) [9]);
     bool FindNakedSingles();
@@ -18,6 +23,9 @@ class Board { //Class to hold the board currently being solved
     bool IsSolved();
     bool FindHiddenSingles();
     bool InCandidates(int, int);
+    bool isInArray(int* array,int arraylen,int num);
+    int CandidateLen(int (*) [9]  ,int );
+    int BruteForceRandom(int );
     
     public:
     Board(char*);
@@ -28,6 +36,8 @@ class Board { //Class to hold the board currently being solved
     bool CheckMissPlacements();
     bool CheckMissPlacements(int);
     bool LogicSolveBoard();
+    bool BruteForceRandomParrent();
+    
     
 };
 Board::Board(char *BoardNum) {
@@ -44,6 +54,7 @@ Board::Board(char *BoardNum) {
         }
     }
     FillCandidates();
+    srand(time(NULL));
 }
 bool Board::IsSameBoard(int *Board1,int *Board2) {
     for (int i=0;i<81;i++) {
@@ -209,13 +220,114 @@ void Board::CopyCandidates() {
             }
         }
     }
-    
 void Board::CopyBoardNumbers() {
     for (int i=0;i<81;i++) {
         OldBoardNumbers[i]=BoardNumbers[i];
         }
     }
+bool Board::isInArray(int* array,int arraylen,int num) {
+    for (int i=0;i<arraylen;i++) {
+        if (array[i]==num) return true;
+        }
+    return false;
+    }
+int Board::CandidateLen(int TempCandidates[81][9],int Cell) {
+    for (int i=0;i<9;i++) {
+        if (TempCandidates[Cell][i]==0) return i;
+        }
+    return 9;
+    }
+bool Board::BruteForceRandomParrent() {
+    int nextNumberOfTries=30;
+    int tries=-nextNumberOfTries;
+    while(true) {
+        tries+=nextNumberOfTries;
+        if(!(BruteForceRandom(nextNumberOfTries)<0)) break;
+        nextNumberOfTries+=10;
+        }
+    cout << tries << endl;
+    return IsSolved() ;
+    }
+int Board::BruteForceRandom(int tryborder) {
+    int testing=0;
+    int TempCandidates[81][9];
+    int TempBoard[81];
+    int TempSolvedNumbers[81];
+    for (int i=0;i<81;i++) {
+        TempBoard[i]=BoardNumbers[i];
+        TempSolvedNumbers[i]=SolvedNumbers[i];
+        for (int j=0;j<9;j++) {
+            TempCandidates[i][j]=Candidates[i][j];
+            }
+        }
     
+    int cells[]={-1,-1,-1,-1};
+    for (int i=0;i<4;i++) {
+        while(true) {
+            int RandomCell=rand()%81;
+            if (!(SolvedNumbers[RandomCell] or isInArray(cells,i,RandomCell))) {
+                cells[i]=RandomCell;
+                break;
+                }
+            }
+        }
+    for (int i=0;i<=CandidateLen(TempCandidates,cells[0]);i++) {
+        if (i==0) BoardNumbers[cells[0]]=0;
+        else BoardNumbers[cells[0]]=TempCandidates[cells[0]][i-1];
+        if(i!=0) SolvedNumbers[cells[0]]=true;
+        for (int j=0;j<=CandidateLen(TempCandidates,cells[1]);j++) {
+            if (j==0) BoardNumbers[cells[1]]=0;
+            else BoardNumbers[cells[1]]=TempCandidates[cells[1]][j-1];
+            if(j!=0) SolvedNumbers[cells[1]]=true;
+            for (int k=0;k<=CandidateLen(TempCandidates,cells[2]);k++) {
+                if (k==0) BoardNumbers[cells[2]]=0;
+                else BoardNumbers[cells[2]]=TempCandidates[cells[2]][k-1];
+                if(k!=0) SolvedNumbers[cells[2]]=true;
+                for (int l=0;l<=CandidateLen(TempCandidates,cells[3]);l++) {
+                    if (l==0) BoardNumbers[cells[3]]=0;
+                    else BoardNumbers[cells[3]]=TempCandidates[cells[3]][l-1];
+                    if(l!=0) SolvedNumbers[cells[3]]=true;
+                    testing++;
+                    for (int ii=0;ii<81;ii++) {
+                        if (isInArray(cells,4,ii)) continue;
+                        BoardNumbers[ii]=TempBoard[ii];
+                        SolvedNumbers[ii]=TempSolvedNumbers[ii];
+                        for (int jj=0;jj<9;jj++) {
+                            Candidates[ii][jj]=TempCandidates[ii][jj];
+                            }
+                        }
+                    if (testing>tryborder) {
+                        for (int a=0;a<4;a++) {
+                            BoardNumbers[a]=0;
+                            SolvedNumbers[a]=false;
+                            for (int b=0;b<9;b++) {
+                                Candidates[a][b]=TempCandidates[a][b];
+                                }
+                            }
+                        return -3;
+                        }
+                    if (CheckMissPlacements()) {
+                        if (LogicSolveBoard()) return 1;
+                        PrintBoard();
+                        }
+                    
+                    }
+                }
+            }
+        }
+    for (int ii=0;ii<81;ii++) {
+        BoardNumbers[ii]=TempBoard[ii];
+        SolvedNumbers[ii]=TempSolvedNumbers[ii];
+        for (int jj=0;jj<9;jj++) {
+            Candidates[ii][jj]=TempCandidates[ii][jj];
+            }
+        }
+    return -1;                
+                
+        
+    
+    }    
+            
 int Board::BruteForce() {
     int CurrentCell=-1;
     bool BackStepped=false;
