@@ -87,7 +87,6 @@ bool Board::LogicSolveBoard() {
             //FindPointingPairs();
             naked=FindNakedSingles();
             hidden=FindHiddenSingles();
-            cout << naked << hidden <<  endl;
             if (!(hidden or naked)) break;
             else {
                 if (!IsSameBoard(BoardNumbers,OldBoardNumbers)) FillCandidates();
@@ -104,7 +103,6 @@ bool Board::LogicSolveBoard() {
             }
         naked=FindNakedSingles();
         hidden=FindHiddenSingles();
-        cout << naked << hidden << endl;
         if (!(hidden or naked)) break;
         else FillCandidates();
         
@@ -275,19 +273,27 @@ int Board::BruteForceRandom(int tryborder) {
         if (i==0) BoardNumbers[cells[0]]=0;
         else BoardNumbers[cells[0]]=TempCandidates[cells[0]][i-1];
         if(i!=0) SolvedNumbers[cells[0]]=true;
+        else SolvedNumbers[cells[0]]=false;
+        if (!CheckMissPlacements(cells[0])) continue;
         for (int j=0;j<=CandidateLen(TempCandidates,cells[1]);j++) {
             if (j==0) BoardNumbers[cells[1]]=0;
             else BoardNumbers[cells[1]]=TempCandidates[cells[1]][j-1];
             if(j!=0) SolvedNumbers[cells[1]]=true;
+            else SolvedNumbers[cells[1]]=false;
+            if (!CheckMissPlacements(cells[1])) continue;
             for (int k=0;k<=CandidateLen(TempCandidates,cells[2]);k++) {
                 if (k==0) BoardNumbers[cells[2]]=0;
                 else BoardNumbers[cells[2]]=TempCandidates[cells[2]][k-1];
                 if(k!=0) SolvedNumbers[cells[2]]=true;
+                else SolvedNumbers[cells[2]]=false;
+                if (!CheckMissPlacements(cells[2])) continue;
                 for (int l=0;l<=CandidateLen(TempCandidates,cells[3]);l++) {
                     if (l==0) BoardNumbers[cells[3]]=0;
                     else BoardNumbers[cells[3]]=TempCandidates[cells[3]][l-1];
                     if(l!=0) SolvedNumbers[cells[3]]=true;
+                    else SolvedNumbers[cells[3]]=false;
                     testing++;
+                    if (!CheckMissPlacements(cells[3])) continue;
                     for (int ii=0;ii<81;ii++) {
                         if (isInArray(cells,4,ii)) continue;
                         BoardNumbers[ii]=TempBoard[ii];
@@ -298,16 +304,28 @@ int Board::BruteForceRandom(int tryborder) {
                         }
                     if (testing>tryborder) {
                         for (int a=0;a<4;a++) {
-                            BoardNumbers[a]=0;
-                            SolvedNumbers[a]=false;
+                            BoardNumbers[cells[a]]=0;
+                            SolvedNumbers[cells[a]]=false;
                             for (int b=0;b<9;b++) {
-                                Candidates[a][b]=TempCandidates[a][b];
+                                Candidates[cells[a]][b]=TempCandidates[cells[a]][b];
                                 }
                             }
                         return -3;
                         }
                     if (CheckMissPlacements()) {
-                        if (LogicSolveBoard()) return 1;
+                       // cout << "a"<< endl;
+                        //PrintBoard();
+                        //FillCandidates();
+                        if (LogicSolveBoard() ){
+                        for(int g=0;g<4;g++) {
+                            cout << cells[g] << endl;
+                            }
+                         return 1;
+                         }
+                       // cout << "b" << endl;
+                        //PrintBoard();
+                        }
+                    else {
                         PrintBoard();
                         }
                     
