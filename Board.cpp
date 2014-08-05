@@ -11,6 +11,13 @@ class Board { //Class to hold the board currently being solved
     void CopyCandidates();    
     void FillCandidates();
     void CopyBoardNumbers();
+    bool IsSameBoard(int*, int*);
+    bool IsSameCandidates(int (*) [9],int (*) [9]);
+    bool FindNakedSingles();
+    bool IsSameCandidates();
+    bool IsSolved();
+    bool FindHiddenSingles();
+    bool InCandidates(int, int);
     
     public:
     Board(char*);
@@ -20,6 +27,7 @@ class Board { //Class to hold the board currently being solved
     void PrintBoard();
     bool CheckMissPlacements();
     bool CheckMissPlacements(int);
+    bool LogicSolveBoard();
     
 };
 Board::Board(char *BoardNum) {
@@ -37,6 +45,163 @@ Board::Board(char *BoardNum) {
     }
     FillCandidates();
 }
+bool Board::IsSameBoard(int *Board1,int *Board2) {
+    for (int i=0;i<81;i++) {
+        if (Board1[i]!=Board2[i]) return false;
+        }
+    return true;
+    }
+bool Board::IsSameCandidates(int Candidates1[81][9],int Candidates2[81][9]) {
+    for (int i=0;i<81;i++) {
+        for(int j=0;j<9;j++) {
+            if (Candidates1[i][j]!=Candidates2[i][j]) return false;
+            }
+        }
+    return true;
+    }
+bool Board::IsSolved() {
+    for (int i=0;i<81;i++) {
+        if (SolvedNumbers[i]) continue;
+            return false;
+        }
+    return true;
+    }
+bool Board::LogicSolveBoard() {
+    int naked=0;
+    int hidden=0;
+    FillCandidates();
+    while(true) {
+        CopyBoardNumbers();
+        while(true) {
+            //FindPointingPairs();
+            naked=FindNakedSingles();
+            hidden=FindHiddenSingles();
+            cout << naked << hidden <<  endl;
+            if (!(hidden or naked)) break;
+            else {
+                if (!IsSameBoard(BoardNumbers,OldBoardNumbers)) FillCandidates();
+                //FindNakedPairsTripplesQuads();
+                //FindHiddenPairsTripplesQuads();
+                }
+           }
+        while(true) {
+            CopyCandidates();
+            //NakedGroups=NakedGroups=FindNakedPairsTripplesQuads();
+            //HiddenGroups=FindHiddenPairsTripplesQuads();
+            //PointingPairs=FindPointingPairs();
+            if (IsSameCandidates(Candidates,OldCandidates)) break;
+            }
+        naked=FindNakedSingles();
+        hidden=FindHiddenSingles();
+        cout << naked << hidden << endl;
+        if (!(hidden or naked)) break;
+        else FillCandidates();
+        
+    }
+    return IsSolved();
+}
+
+bool Board::FindNakedSingles() {
+    bool Changed=false;
+    for (int i=0;i<81;i++) {
+        if (SolvedNumbers[i]==false) {
+            if (Candidates[i][1]==0) {
+                Changed=true;
+                BoardNumbers[i]=Candidates[i][0];
+                SolvedNumbers[i]=true;
+                }
+            }
+        }
+    return Changed;
+    }
+bool Board::InCandidates(int Cell,int num) {
+    for (int i=0;i<9;i++) {
+        if (Candidates[Cell][i]==num) return true;
+        if (Candidates[Cell][i]==0) return false;
+        }
+    return false;
+    }
+bool Board::FindHiddenSingles() {
+    //Check each row, collumn and block, and if a number only is candidate in one cell, it means that it must be that cell
+    //Blocks: 
+    bool Changed=false;
+    int cell=-1;
+    int cellcount=0;
+    //Blocks:
+    for (int x=0;x<3;x++) {
+        for (int y=0;y<3;y++) {
+            for(int num=1;num<10;num++) {
+                cell=-1;
+                cellcount=0;
+                for(int i=0;i<3;i++) {
+                    for (int j=0;j<3;j++) {
+                        if (InCandidates((3*x+i)*9+(3*y+j),num)) {
+                            cell=(3*x+i)*9+(3*y+j);
+                            cellcount++;
+                            }
+                        }
+                    }
+                if (cellcount==1 and BoardNumbers[cell]==0) {
+                    BoardNumbers[cell]=num;
+                    SolvedNumbers[cell]=true;
+                    Candidates[cell][0]=num;
+                    if (Candidates[cell][1]!=0) {
+                        for (int j=1;j<9;j++) Candidates[cell][j]=0;
+                        }
+                    Changed=true;
+                    }
+                }
+            }
+        }
+    //Rows
+    for (int x=0;x<9;x++) {
+        for(int num=1;num<10;num++) {
+            cell=-1;
+            cellcount=0;
+            for (int y=0;y<9;y++) {
+                if (InCandidates(x*9+y,num)) {
+                    cell=x*9+y;
+                    cellcount++;
+                    }
+                }
+            if (cellcount==1 and BoardNumbers[cell]==0) {
+                BoardNumbers[cell]=num;
+                SolvedNumbers[cell]=true;
+                Candidates[cell][0]=num;
+                if (Candidates[cell][1]!=0) {
+                    for (int j=1;j<9;j++) Candidates[cell][j]=0;
+                    }
+                Changed=true;
+                }
+            }
+        }
+    //Collumns
+    for (int y=0;y<9;y++) {
+        for(int num=1;num<10;num++) {
+            cell=-1;
+            cellcount=0;
+            for (int x=0;x<9;x++) {
+                if (InCandidates(x*9+y,num)) {
+                    cell=x*9+y;
+                    cellcount++;
+                    }
+                }
+            if (cellcount==1 and BoardNumbers[cell]==0) {
+                BoardNumbers[cell]=num;
+                SolvedNumbers[cell]=true;
+                Candidates[cell][0]=num;
+                if (Candidates[cell][1]!=0) {
+                    for (int j=1;j<9;j++) Candidates[cell][j]=0;
+                    }
+                Changed=true;
+                }
+            }
+        }
+    return Changed;
+}
+                        
+           
+                
 void Board::CopyCandidates() {
     for(int i=0;i<81;i++) {
         for(int j=0;j<9;j++) {
@@ -59,7 +224,7 @@ int Board::BruteForce() {
     int CurCandidate[81]={0};
     while(true) {
         Jumps++;
-        if (Jumps%20000==0) PrintBoard();
+        //if (Jumps%20000==0) PrintBoard();
         while(true) {
             CurrentCell++;
             if (CurrentCell>80) return Jumps;
