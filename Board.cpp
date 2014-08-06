@@ -33,6 +33,8 @@ class Board { //Class to hold the board currently being solved
     int BruteForceRandom(int );
     bool BrFoRa=false;
     int BoardNumbers_B[81];
+    bool FindPointingPairs();
+    void RemoveCandidate(int,int);
     public:
     Board(char*);
     bool solved=false;
@@ -94,11 +96,12 @@ bool Board::IsSolved() {
 bool Board::LogicSolveBoard() {
     int naked=0;
     int hidden=0;
+    int PointingPairs=0;
     FillCandidates();
     while(true) {
         CopyBoardNumbers();
         while(true) {
-            //FindPointingPairs();
+            FindPointingPairs();
             naked=FindNakedSingles();
             hidden=FindHiddenSingles();
             if (!(hidden or naked)) break;
@@ -117,7 +120,7 @@ bool Board::LogicSolveBoard() {
             CopyCandidates();
             //NakedGroups=NakedGroups=FindNakedPairsTripplesQuads();
             //HiddenGroups=FindHiddenPairsTripplesQuads();
-            //PointingPairs=FindPointingPairs();
+            PointingPairs=FindPointingPairs();
             if (!BrFoRa) {
                 if (IsSameCandidates(Candidates,OldCandidates)) break;
                 }
@@ -175,6 +178,94 @@ bool Board::InCandidates(int Cell,int num) {
         if (Candidates_B[Cell][i]==0) return false;
         }
     return false;
+    }
+bool Board::FindPointingPairs() {
+    bool Changed=false;
+    int cells[3][2];
+    int SkipThese[3];
+    int SkipTheseCount=0;
+    int cellcount=0;
+    for (int x=0;x<3;x++) {
+        for (int y=0;y<3;y++) {
+            for(int num=1;num<10;num++) {
+                cellcount=0;
+                for(int i=0;i<3;i++) {
+                    for (int j=0;j<3;j++) {
+                        if (InCandidates((3*x+i)*9+(3*y+j),num)) {
+                            if (cellcount<3) {
+                                cells[cellcount][0]=3*x+i;
+                                cells[cellcount][1]=3*y+j;
+                                }
+                            
+                            cellcount++;
+                            }
+                        }
+                    }
+                if (cellcount==3 or cellcount==2) {
+                    bool SameRow=true;
+                    bool SameCollumn=true;
+                    int row=cells[0][0];
+                    int collumn=cells[0][1];
+                    for (int i=1;i<cellcount;i++) {
+                        if (cells[i][0]!=row) SameRow=false;
+                        if (cells[i][1]!=collumn) SameCollumn=false;
+                        }
+                    if (SameRow) {
+                        SkipTheseCount=0;
+                        for (int i=0;i<cellcount;i++) {
+                            SkipThese[SkipTheseCount]=cells[i][1];
+                            SkipTheseCount++;
+                            }
+                        for(int thiscollumn=0;thiscollumn<9;thiscollumn++) {
+                            if (!isInArray(SkipThese,SkipTheseCount,thiscollumn)){
+                                RemoveCandidate(row*9+thiscollumn,num);
+                                Changed=1;
+                                }
+                            }
+                        }
+                    else if (SameCollumn) {
+                        SkipTheseCount=0;
+                        for (int i=0;i<cellcount;i++) {
+                            SkipThese[SkipTheseCount]=cells[i][0];
+                            SkipTheseCount++;
+                            }
+                        for(int thisrow=0;thisrow<9;thisrow++) {
+                            if (!isInArray(SkipThese,SkipTheseCount,thisrow)){
+                                RemoveCandidate(thisrow*9+collumn,num);
+                                Changed=1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return Changed;
+    }
+                    
+                        
+                        
+void Board::RemoveCandidate(int Cell,int num) {
+    if(!BrFoRa) {
+        for (int i=0;i<9;i++) {
+            if (Candidates[Cell][i]==num) {
+                Candidates[Cell][i]=0;
+                std::sort(Candidates[Cell],Candidates[Cell]+9,std::greater<int>());
+                break;
+                }
+             else if (Candidates[Cell][i]==0) break;
+            }
+        }
+    else {
+        for (int i=0;i<9;i++) {
+            if (Candidates_B[Cell][i]==num) {
+                Candidates_B[Cell][i]=0;
+                std::sort(Candidates_B[Cell],Candidates_B[Cell]+9,std::greater<int>());
+                break;
+                }
+             else if (Candidates_B[Cell][i]==0) break;
+            }
+        }
     }
 bool Board::FindHiddenSingles() {
     //Check each row, collumn and block, and if a number only is candidate in one cell, it means that it must be that cell
@@ -389,7 +480,6 @@ bool Board::BruteForceRandomParrent() {
             SolvedNumbers[i]=SolvedNumbers_B[i];
             for (int j=0;j<9;j++) Candidates[i][j]=Candidates_B[i][j];
             }
-        LogicSolveBoard();
         }
     return State;
     }
@@ -433,7 +523,14 @@ int Board::BruteForceRandom(int tryborder) {
                         }
                     if (testing>tryborder) return -3;
                     if (CheckMissPlacements()) {
-                        if (LogicSolveBoard() and CheckMissPlacements()) return 1;
+                        if (LogicSolveBoard() and CheckMissPlacements()){
+                            SolvedNumbers_B[cells[3]]=false;
+                            SolvedNumbers_B[cells[2]]=false;
+                            SolvedNumbers_B[cells[1]]=false;
+                            SolvedNumbers_B[cells[0]]=false;
+                            LogicSolveBoard();
+                            return 1;
+                            }
                         }
                     }
                 }
